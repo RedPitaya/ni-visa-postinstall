@@ -5,8 +5,8 @@ After=remote-fs.target
 [Service]
 #RemainAfterExit=yes
 Type=forking
-ExecStart=/usr/bin/bash /etc/init.d/nipal start
-ExecStop=/usr/bin/bash /etc/init.d/nipal stop
+ExecStart=/bin/bash /etc/init.d/nipal start
+ExecStop=/bin/bash /etc/init.d/nipal stop
 
 [Install]
 WantedBy=multi-user.target

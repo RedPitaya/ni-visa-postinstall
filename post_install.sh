@@ -4,6 +4,7 @@ register() {
     install -b -m644 ./menus/*.menu /etc/xdg/menus/applications-merged/
     install -b -m644 ./services/*.service /etc/systemd/system/
     chmod a-x /etc/init.d/*
+    chmod +x /usr/local/natinst/nipal/etc/init.d/*
     systemctl daemon-reload
     systemctl enable nipal && echo "Enabled nipal.service"
 }
