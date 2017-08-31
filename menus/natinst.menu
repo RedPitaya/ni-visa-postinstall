@@ -1,0 +1,13 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+
+
+<Menu>
+  <Menu>
+  <Name>National Instruments</Name>
+  <Directory>natinst.directory</Directory>
+  <Include>
+    <Category>natinst</Category>
+  </Include>
+</Menu>
+</Menu>

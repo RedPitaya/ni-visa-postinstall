@@ -1,0 +1,187 @@
+#!/bin/bash
+#
+#  nipal
+#  NI-PAL startup script for Linux
+#
+#  © Copyright 2002-2004,
+#  National Instruments Corporation.
+#  All Rights reserved.
+#
+#  originated:  6 November 2002
+#
+#  following is the init header information for RH Linux variants, used by
+#  /sbin/chkconfig
+# chkconfig:         2345 60 60
+# description:       Core driver services for National Instruments drivers.
+#
+#  following is the init header information for SuSE Linux, used by /sbin/insserv
+### BEGIN INIT INFO
+# Provides:          nipal
+# Required-Start:    $syslog $remote_fs
+# X-UnitedLinux-Should-Start: $time
+# Required-Stop:     $syslog $remote_fs
+# X-UnitedLinux-Should-Stop: $time
+# Default-Start:     2 3 5
+# Default-Stop:      0 1 6
+# Short-Description: NI Core Driver Services
+# Description:       Start to provide core driver services to National Instruments drivers.
+### END INIT INFO
+#
+
+RETVAL=0
+kernelVersion=`uname -r`
+modulePath=/lib/modules/$kernelVersion/kernel/natinst/nipal
+nipalEtc=/etc/natinst/nipal
+nipalDir=`cat $nipalEtc/nipal.dir`
+nikalDir=`cat /etc/natinst/nikal/nikal.dir`
+nipalVar=/var/lib/natinst/nipal
+
+# source InstallerUtility.sh for testKernelDriverLoaded and recursiveUnloadKernelDriver
+# eliminate searches for utilities that are unneeded by those functions
+NO_INSTALL_UTIL=1
+NO_COMPILE_UTIL=1
+. $nikalDir/bin/installerUtility.sh
+
+killInstancesOf() {
+   for PID in `ps axw | grep $1 | grep -v grep | awk '{print $1;}'`; do
+      kill $PID
+      timeout=0
+      while [ $timeout -lt 10 ]; do
+         if ps axw -o pid | grep -w $PID ; then
+            sleep 1
+         else
+            break
+         fi
+         timeout=`expr $timeout + 1`
+      done
+   done
+}
+
+start() {
+   if ! status ; then
+
+      if ! testKernelDriverLoaded nipalk; then
+         /sbin/modprobe -v nipalk
+         if ! testKernelDriverLoaded nipalk ; then
+            echo " "
+            echo "error: nipalk failed to load"
+            echo "possible causes: "
+            echo "   nipalk was not versioned for this kernel ($kernelVersion)"
+            echo "   modules are not enabled for this kernel (CONFIG_MODULES)"
+            echo "   unresolved symbols"
+            echo "possible solution: "
+            echo "   if you recently installed a new kernel or have rebooted to"
+            echo "   a different kernel from one you were previously running then run"
+            echo "   /usr/local/bin/updateNIDrivers"
+            echo "   to version your NI drivers for kernel $kernelVersion"
+            return 1
+         fi
+      fi
+
+      PALCHARMAJOR=`grep nikal /proc/devices | awk '{ print $1 }'`
+
+      rm -f /dev/nipalk
+      if ! mknod /dev/nipalk c $PALCHARMAJOR 0; then
+         echo " "
+         echo "error: failed to create /dev/nipalk"
+         echo "possible solution: "
+         echo "   if you recently installed a new kernel or have rebooted to"
+         echo "   a different kernel from one you were previously running then run"
+         echo "   /usr/local/bin/updateNIDrivers"
+         echo "   to version your NI drivers for kernel $kernelVersion"
+         return 1
+      fi
+      chmod 0666 /dev/nipalk
+
+      if [ ! -d $nipalVar ]; then
+         mkdir -p $nipalVar
+      fi
+      nipalPersistentDataFile=$nipalVar/nipalps.bin
+      if [ ! -f $nipalPersistentDataFile ]; then
+         echo -n "%" > $nipalPersistentDataFile
+         chmod 600 $nipalPersistentDataFile
+      fi
+      cat $nipalPersistentDataFile > /dev/nipalk
+
+      $nipalDir/bin/readInfFiles `find $nipalEtc/inf -iname \*.inf | sort` 
+
+      killInstancesOf nipalps
+      $nipalDir/bin/nipalps /dev/nipalk $nipalPersistentDataFile &
+
+      for MOD in `ls $nipalEtc/bootdrivers/* 2>/dev/null`
+      do
+         for line in `cat $MOD`
+         do
+            /sbin/modprobe -v $line
+         done
+      done
+
+      if [ -d /var/lock/subsys ]; then
+         touch /var/lock/subsys/nipal
+      fi
+   fi
+   return 0
+}
+
+stop() {
+   killInstancesOf nipalps
+
+   if testKernelDriverLoaded nipalk; then
+      if ! recursiveUnloadKernelDriver nipalk ; then
+         echo "Failed to unload nipalk because it is being used!"
+         return 1
+      fi
+   fi
+
+   rm -f /dev/nipalk
+   
+   if [ -f /var/lock/subsys/nipal ]; then
+      rm -f /var/lock/subsys/nipal
+   fi
+
+   return 0
+}
+
+restart() {
+   stop
+   start
+}
+
+status() {
+   if [ -f /var/lock/subsys/nipal ]; then
+      return 0
+   else
+      return 1
+   fi
+}
+
+case "$1" in
+   start)
+      start
+      ;;
+   stop)
+      stop
+      ;;
+   restart)
+      restart
+      ;;
+   reload)
+      restart
+      ;;
+   force-reload)
+      restart
+      ;;
+   status)
+      status
+      ;;
+   condrestart)
+      restart
+      ;;
+   *)
+      echo $"Usage: $0 {start|stop|restart|reload|force-reload|status|condrestart}"
+      exit 2
+      ;;
+esac
+
+exit $?
+

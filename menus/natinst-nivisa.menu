@@ -1,0 +1,15 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+
+<Menu>
+    <Menu>
+      <Name>National Instruments</Name>
+      <Menu>
+        <Name>NI-VISA</Name>
+        <Directory>natinst-nivisa.directory</Directory>
+        <Include>
+          <Category>natinst-nivisa</Category>
+        </Include>
+      </Menu>
+  </Menu>
+</Menu>

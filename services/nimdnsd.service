@@ -1,0 +1,9 @@
+[Unit]
+Description=NI mDNS Responder service
+
+[Service]
+Type=forking
+ExecStart=/usr/local/natinst/nimdnsresponder/bin/nimdnsResponder &
+
+[Install]
+WantedBy=multi-user.target

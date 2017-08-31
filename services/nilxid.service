@@ -1,0 +1,11 @@
+[Unit]
+Description=Discovers mDNS/dns-sd enabled LXI devices in the subnet and makes them available to NI-VISA.
+After=nimdnsd.service network.target
+Requires=nimdnsd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/vxipnp/bin/niLxiDiscovery
+
+[Install]
+WantedBy=multi-user.target

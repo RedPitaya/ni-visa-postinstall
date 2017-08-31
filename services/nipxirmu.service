@@ -1,0 +1,11 @@
+[Unit]
+Description=National Instruments nipxirmu service.
+After=nipal.service remote-fs.target
+Requires=nipal.service
+
+[Service]
+Type=forking
+ExecStart=/usr/local/sbin/nipxism /usr/local/lib/libnipxirmu.so
+
+[Install]
+WantedBy=multi-user.target

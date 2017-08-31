@@ -1,0 +1,9 @@
+[Unit]
+Description=National Instruments Service Locator daemon.
+
+[Service]
+Type=forking
+ExecStart=/usr/local/natinst/nisvcloc/bin/nisvcloc -D
+
+[Install]
+WantedBy=multi-user.target
